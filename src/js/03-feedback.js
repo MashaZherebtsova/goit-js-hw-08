@@ -1,45 +1,37 @@
 import throttle from 'lodash.throttle';
 
-const STORAGE_KEY = 'feedback-form-state';
-let formData = {};
+const FEEDBACK_FORM_STATE = 'feedback-form-state';
 
+const form = document.querySelector('.feedback-form');
 
-const refs = {
-  formEl: document.querySelector('.feedback-form'),
-  emailInputEl: document.querySelector('.feedback-form input'),
-  textareaInputEl: document.querySelector('.feedback-form textarea'),
-};
+form.addEventListener('input', throttle(onInputData, 500));
+form.addEventListener('submit', onFormSubmit);
 
-refs.formEl.addEventListener('submit', onFormSubmit);
-refs.formEl.addEventListener('input', throttle(onSavingFormInput, 500));
+let dataForm = JSON.parse(localStorage.getItem(FEEDBACK_FORM_STATE)) || {};
+const { email, message } = form.elements;
+reloadPage();
 
-onFormRecovery();
-
-function onFormSubmit(e) {
-  e.preventDefault();
-  const emailValue = refs.emailInputEl.value;
-  const textareaValue = refs.textareaInputEl.value;
-  if (emailValue === '' || textareaValue === '') {
-    alert('Заповніть поля');
-  }
-  e.target.reset();
-  localStorage.removeItem(STORAGE_KEY);
+function onInputData(event) {
+  dataForm = { email: email.value, message: message.value };
+  localStorage.setItem(FEEDBACK_FORM_STATE, JSON.stringify(dataForm));
 }
 
-function onSavingFormInput(e) {
-  formData[e.target.name] = e.target.value;
-
-  const inputValueString = JSON.stringify(formData);
-
-  localStorage.setItem(STORAGE_KEY, inputValueString);
+function reloadPage() {
+  if (dataForm) {
+    email.value = dataForm.email || '';
+    message.value = dataForm.message || '';
+  }
 }
 
-function onFormRecovery() {
-  const savedValue = localStorage.getItem(STORAGE_KEY);
+function onFormSubmit(event) {
+  event.preventDefault();
+  console.log({ email: email.value, message: message.value });
 
-  if (savedValue) {
-    const recoveryValue = JSON.parse(savedValue);
-    refs.emailInputEl.value = recoveryValue.email;
-    refs.textareaInputEl.value = recoveryValue.message;
+  if (email.value === '' || message.value === '') {
+    return alert(`Заповніть поля.`);
   }
+
+  localStorage.removeItem(FEEDBACK_FORM_STATE);
+  event.currentTarget.reset();
+  dataForm = {};
 }
